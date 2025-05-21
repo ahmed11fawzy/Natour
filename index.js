@@ -1,5 +1,7 @@
 const express= require('express');
 const tourRouter = require('./routes/tourRoutes');
+const appError =require('./utils/appError')
+const globalErrorHandler = require('./controllers/errorController');
 const dotenv = require('dotenv').config();
 const db = require('./Config/dbConfig');
 const morgan = require('morgan');
@@ -24,12 +26,43 @@ db.then(() => {
 
 
 // Middleware
-
+app.set('query parser', 'extended');
 app.use(express.json());
 
 if (process.env.NODE_ENV === 'development') {
-    app.use(morgan('dev'));
+  app.use(morgan('dev'));
 }
+console.log(process.env.NODE_ENV);
+
+// Routes
 
 app.use('/api/v1/tours', tourRouter);
 
+// handling unhandled routes
+const server=app.use((req, res, next) => {
+  next(new appError(`Can't find ${req.originalUrl} on this server!`, 404));
+});
+
+
+// Global error handling middleware
+
+app.use(globalErrorHandler);
+
+
+// Unhandled Rejection and uncaught exception handling
+
+process.on("unhandledRejection", (err) => {
+    console.log("Unhandled Rejection! Shutting down...");
+    console.log(err.name, err.message);
+    server.close(() => {
+        process.exit(1);
+    });
+});
+
+process.on("uncaughtException", (err) => {
+    console.log("Uncaught Exception! Shutting down...");
+    console.log(err.name, err.message);
+    server.close(() => {
+        process.exit(1);
+    });
+});

@@ -1,5 +1,6 @@
 const express= require('express');
 const tourRouter = require('./routes/tourRoutes');
+const userRouter = require('./routes/userRoutes');
 const appError =require('./utils/appError')
 const globalErrorHandler = require('./controllers/errorController');
 const dotenv = require('dotenv').config();
@@ -32,11 +33,11 @@ app.use(express.json());
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
-console.log(process.env.NODE_ENV);
 
 // Routes
 
 app.use('/api/v1/tours', tourRouter);
+app.use('/api/v1/users', userRouter);
 
 // handling unhandled routes
 const server=app.use((req, res, next) => {

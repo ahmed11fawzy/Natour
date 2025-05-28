@@ -24,7 +24,7 @@ class ApiFeatures {
   sort(){
     if (this.queryString.sort) {
       const sortBy = this.queryString.sort.split(',').join(' ');
-      console.log(sortBy);
+      
       this.query = this.query.sort(sortBy);
     } else {
       this.query.sort('-createdAt');
@@ -48,7 +48,7 @@ class ApiFeatures {
         const page = this.queryString.page * 1 || 1;
         const limit = this.queryString.limit * 1 || 100;
         const skip = (page - 1) * limit;
-        console.log(skip);
+        
         this.query = this.query.skip(skip).limit(limit);
         return this;
     }

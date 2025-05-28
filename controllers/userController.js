@@ -6,7 +6,7 @@ const AppError = require('../utils/appError');
 
 exports.getAllUsers = catchAsync(async (req, res, next) => {
     const users = await User.find();
-    console.log();
+    
     
     if (users.length=== 0) {
         return next(new AppError('No users found', 404));

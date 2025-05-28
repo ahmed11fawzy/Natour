@@ -22,7 +22,7 @@ db.then(() => {
 
 }).catch((err) => {
     console.log('DB connection failed!');
-    console.log(err);
+    
 });
 
 

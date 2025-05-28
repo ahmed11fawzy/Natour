@@ -1,3 +1,5 @@
+const AppError = require("../utils/appError");
+
 const sendDevError = (err, res) => {
     res.status(err.statusCode).json({
         status: err.status,
@@ -28,6 +30,13 @@ const handleMongooseErrors = (err) => {
     return new AppError(message, 400);
 }
 
+const handleExpiredToken = (err) => {
+    return new AppError('Your token has expired! Please log in again.', 401);
+}
+
+const handleJwtErrors =(err)=>{
+    return new AppError('Invalid token !', 401);
+}
 module.exports=(err,req,res,next)=>{
     err.statusCode = err.statusCode || 500;
     err.status = err.status || 'error';
@@ -38,6 +47,8 @@ module.exports=(err,req,res,next)=>{
     else if (process.env.NODE_ENV === 'production') {
         let error={...err}
         if(error.name === 'CastError') error = handleMongooseErrors(error);            
+        if (error.name === 'TokenExpiredError') error = handleExpiredToken(error);            
+        if (error.name === 'JsonWebTokenError') error = handleJwtErrors(error);            
         sendProdError(error, res);
     }  
 }

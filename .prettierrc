@@ -1,3 +1,6 @@
 {
-  "singleQuote": true
+  "semi": true,
+  "singleQuote": false,
+  "doubleQuote": true,
+  "printWidth": 80
 }

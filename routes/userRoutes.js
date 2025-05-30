@@ -1,4 +1,5 @@
 const router = require("express").Router();
+const rateLimit = require("express-rate-limit");
 const protect = require("../middelwares/protectionMiddleware");
 const {
   signup,
@@ -16,8 +17,14 @@ const {
 } = require("../controllers/userController");
 const loginValidator = require("../middelwares/loginValidator");
 
+const limiter = rateLimit({
+  max: 3,
+  windowMs: 5 * 60 * 1000,
+  message: "Too many tries of login requests , please try again in an 15 minutes!",
+});
+
 router.post("/signup", signup);
-router.post("/login", loginValidator, login);
+router.post("/login", limiter, loginValidator, login); //! limiter => Limiting login requests
 router.post("/forgotpassword", forgotPassword);
 router.patch("/restpassword/:token", resetPassword);
 router.patch("/updatepassword", protect, updatePassword);

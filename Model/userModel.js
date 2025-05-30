@@ -50,6 +50,11 @@ const userSchema = new mongoose.Schema({
   },
   passwordResetToken: String,
   passwordResetExpires: Date,
+  active: {
+    type: Boolean,
+    default: true,
+    select: false,
+  },
 });
 
 // ! Middleware to hash the password before saving the user document
@@ -74,22 +79,23 @@ userSchema.pre("save", function (next) {
   next();
 });
 
+// ! Middlewer to only show active users
+
+userSchema.pre(/^find/, function (next) {
+  this.find({ active: { $ne: false } });
+  next();
+});
+
 // ! Instance methods for user schema for password comparison
-userSchema.methods.correctPassword = async function (
-  candidatePassword,
-  userPassword
-) {
+userSchema.methods.correctPassword = async function (candidatePassword, userPassword) {
   return await bcrypt.compare(candidatePassword, userPassword);
 };
 
 // ! Instance method to check if password was changed after JWT was issued
 userSchema.methods.checkPasswordChangedAfter = function (JWTTimestamp) {
   if (this.passwordChangedAt) {
-    const changedTimestamp = parseInt(
-      this.passwordChangedAt.getTime() / 1000,
-      10
-    );
-    console.log(changedTimestamp, JWTTimestamp);
+    const changedTimestamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
+
     return JWTTimestamp < changedTimestamp; // if true, password was changed after token was issued
   }
   //  false means not changed
@@ -109,7 +115,7 @@ userSchema.methods.createPasswordResetToken = function () {
     .digest("hex");
   // Set the expiration time for the token
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
-  console.log("🚀 ~ resetToken:", this.passwordResetExpires);
+
   return resetToken;
 };
 

@@ -1,69 +1,77 @@
-const express= require('express');
-const tourRouter = require('./routes/tourRoutes');
-const userRouter = require('./routes/userRoutes');
-const appError =require('./utils/appError')
-const globalErrorHandler = require('./controllers/errorController');
-const dotenv = require('dotenv').config();
-const db = require('./Config/dbConfig');
-const morgan = require('morgan');
+const express = require("express");
+const rateLimit = require("express-rate-limit");
+const helmet = require("helmet");
+const morgan = require("morgan");
+const dotenv = require("dotenv").config();
+const db = require("./Config/dbConfig");
+const appError = require("./utils/appError");
+const globalErrorHandler = require("./controllers/errorController");
+const userRouter = require("./routes/userRoutes");
+const tourRouter = require("./routes/tourRoutes");
 
-
-
-
-// start express app & connect to db
+// ! start express app & connect to db
 
 const app = express();
 const Port = process.env.PORT || 3000;
 db.then(() => {
-    console.log('DB connection successful!');
-    app.listen(Port, () => {
-      console.log(`Server is running on port ${Port}`);
-    });
-
+  console.log("DB connection successful!");
+  app.listen(Port, () => {
+    console.log(`Server is running on port ${Port}`);
+  });
 }).catch((err) => {
-    console.log('DB connection failed!');
-    
+  console.log("DB connection failed!");
 });
 
+// ! Middleware
 
-// Middleware
-app.set('query parser', 'extended');
-app.use(express.json());
-
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
+if (process.env.NODE_ENV === "development") {
+  app.use(morgan("dev"));
 }
 
-// Routes
+const rateLimitter = rateLimit({
+  max: 100,
+  windowMs: 60 * 60 * 1000,
+  message: "Too many requests from this IP, please try again in an hour!",
+});
 
-app.use('/api/v1/tours', tourRouter);
-app.use('/api/v1/users', userRouter);
+// ! Security meddilewares
 
-// handling unhandled routes
-const server=app.use((req, res, next) => {
+app.use(helmet()); // * setting security headers
+app.use("/api", rateLimitter); // * rate limiting
+// * prevent http parameter pollution
+
+// ! Body parser
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+
+// ! Routes
+
+app.use("/api/v1/tours", tourRouter);
+app.use("/api/v1/users", userRouter);
+
+// ! handling unhandled routes
+const server = app.use((req, res, next) => {
   next(new appError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
-
-// Global error handling middleware
+// ! Global error handling middleware
 
 app.use(globalErrorHandler);
 
-
-// Unhandled Rejection and uncaught exception handling
+// ! Unhandled Rejection and uncaught exception handling
 
 process.on("unhandledRejection", (err) => {
-    console.log("Unhandled Rejection! Shutting down...");
-    console.log(err.name, err.message);
-    server.close(() => {
-        process.exit(1);
-    });
+  console.log("Unhandled Rejection! Shutting down...");
+  console.log(err.name, err.message);
+  server.close(() => {
+    process.exit(1);
+  });
 });
 
 process.on("uncaughtException", (err) => {
-    console.log("Uncaught Exception! Shutting down...");
-    console.log(err.name, err.message);
-    server.close(() => {
-        process.exit(1);
-    });
+  console.log("Uncaught Exception! Shutting down...");
+  console.log(err.name, err.message);
+  server.close(() => {
+    process.exit(1);
+  });
 });

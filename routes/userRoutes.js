@@ -1,19 +1,15 @@
 const router = require("express").Router();
 const rateLimit = require("express-rate-limit");
 const protect = require("../middelwares/protectionMiddleware");
-const {
-  signup,
-  login,
-  forgotPassword,
-  resetPassword,
-  updatePassword,
-} = require("../controllers/authController");
+const restrictionMiddleware = require("../middelwares/restrictionMiddleware");
+const { signup, login, forgotPassword, resetPassword, updatePassword } = require("../controllers/authController");
 const {
   getAllUsers,
   updateUser,
   getUser,
   updateMyData,
   deActivateUser,
+  deleteUser,
 } = require("../controllers/userController");
 const loginValidator = require("../middelwares/loginValidator");
 
@@ -27,12 +23,28 @@ router.post("/signup", signup);
 router.post("/login", limiter, loginValidator, login); //! limiter => Limiting login requests
 router.post("/forgotpassword", forgotPassword);
 router.patch("/restpassword/:token", resetPassword);
-router.patch("/updatepassword", protect, updatePassword);
-router.patch("/updatemydata", protect, updateMyData);
-router.delete("/deActivateUser", protect, deActivateUser);
+
+// TODO protect all routes come after this
+router.use(protect);
+
+router.get(
+  "/me",
+  (req, res, next) => {
+    req.params.id = req.user.id;
+    next();
+  },
+  getUser
+);
+
+router.patch("/updatepassword", updatePassword);
+router.patch("/updatemydata", updateMyData);
+router.delete("/deActivateUser", deActivateUser);
+
+// TODO retrict all normal users  only admin can access
+router.use(restrictionMiddleware("admin"));
 
 router.route("/").get(getAllUsers);
 
-router.route("/:id").get(getUser).patch(updateUser);
+router.route("/:id").get(getUser).patch(updateUser).delete(deleteUser);
 
 module.exports = router;

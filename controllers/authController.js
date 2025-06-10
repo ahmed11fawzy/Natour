@@ -7,16 +7,15 @@ const crypto = require("crypto");
 const usableRes = require("../utils/usableRes");
 // ? Signup function to create a new user
 exports.signup = catchAsync(async (req, res, next) => {
-  const { name, email, password, passwordConfirm, passwordChangedAt, role } = req.body;
+  const { name, email, password, passwordConfirm, role } = req.body;
   const newUser = await User.create({
     // to prevent user from sending unwanted data, we can use destructuring and rest operator
     name,
     email,
     password,
     passwordConfirm,
-    passwordChangedAt,
     role,
-  }).select("-password");
+  });
   if (!newUser) {
     return next(new AppError("please provide a valid user data", 400));
   }
@@ -68,9 +67,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   user.save({ validateBeforeSave: false }); // Save the user with the reset token without validation
 
   // TODO 3) Create a reset URL
-  const resetURL = `${req.protocol}://${req.get(
-    "host"
-  )}/api/v1/users/resetpassword/${resetToken}`;
+  const resetURL = `${req.protocol}://${req.get("host")}/api/v1/users/resetpassword/${resetToken}`;
 
   const message = `Forgot your password? Submit a PATCH request with your new password and
                        passwordConfirm to: ${resetURL}.
@@ -94,9 +91,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     user.passwordResetExpires = undefined; // Clear the expiration time
     await user.save({ validateBeforeSave: false }); // Save the user without validation
 
-    return next(
-      new AppError("There was an error sending the email. Try again later!", 500)
-    );
+    return next(new AppError("There was an error sending the email. Try again later!", 500));
   }
 });
 

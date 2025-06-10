@@ -4,20 +4,13 @@ const { promisify } = require("util");
 const User = require("../Model/userModel"); // Assuming you have a User model defined
 module.exports = async (req, res, next) => {
   //  1) Check if token is provided in the headers
-  if (
-    !req.headers.authorization &&
-    !req.headers.authorization.startsWith("Bearer")
-  ) {
-    return next(
-      new AppError("You are not logged in! Please log in to get access.", 401)
-    );
+  if (!req.headers.authorization && !req.headers.authorization.startsWith("Bearer")) {
+    return next(new AppError("You are not logged in! Please log in to get access.", 401));
   }
 
   const token = req.headers.authorization.split(" ")[1]; // Extract the token from the header
   if (!token) {
-    return next(
-      new AppError("You are not logged in! Please log in to get access.", 401)
-    );
+    return next(new AppError("You are not logged in! Please log in to get access.", 401));
   }
 
   // 2) Verify token
@@ -35,9 +28,7 @@ module.exports = async (req, res, next) => {
 
   const isExistingUser = await User.findById(decoded.id);
   if (!isExistingUser) {
-    return next(
-      new AppError("The user belonging to this token no longer exists.", 401)
-    );
+    return next(new AppError("The user belonging to this token no longer exists.", 401));
   }
 
   // 4) Check if user changed password after the token was issued (optional, but recommended)

@@ -36,6 +36,7 @@ const userSchema = new mongoose.Schema({
   },
   passwordConfirm: {
     type: String,
+    select: false,
     required: [true, "Please confirm your password"],
     validate: {
       // This only works on CREATE and SAVE!!!
@@ -109,10 +110,7 @@ userSchema.methods.createPasswordResetToken = function () {
 
   // Hash the token and set it to passwordResetToken field
 
-  this.passwordResetToken = crypto
-    .createHash("sha256")
-    .update(resetToken.toString())
-    .digest("hex");
+  this.passwordResetToken = crypto.createHash("sha256").update(resetToken.toString()).digest("hex");
   // Set the expiration time for the token
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
 

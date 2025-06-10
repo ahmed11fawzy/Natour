@@ -1,4 +1,6 @@
 const express = require("express");
+const fs = require("fs");
+const qs = require("qs");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
 const morgan = require("morgan");
@@ -8,7 +10,11 @@ const appError = require("./utils/appError");
 const globalErrorHandler = require("./controllers/errorController");
 const userRouter = require("./routes/userRoutes");
 const tourRouter = require("./routes/tourRoutes");
+const reviewRouter = require("./routes/reviewRoutes");
+// const Tour = require("./Model/tourModel");
 
+// ! get tours data from json and store it in a database .
+// const tours = JSON.parse(fs.readFileSync(`${__dirname}/dev-data/data/tours.json`, "utf-8"));
 // ! start express app & connect to db
 
 const app = express();
@@ -17,12 +23,15 @@ db.then(() => {
   console.log("DB connection successful!");
   app.listen(Port, () => {
     console.log(`Server is running on port ${Port}`);
+    /* Tour.create(tours, {
+      validateBeforeSave: false,
+    }); */
   });
 }).catch((err) => {
   console.log("DB connection failed!");
 });
 
-// ! Middleware
+// ! Middlewares
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
@@ -43,11 +52,14 @@ app.use("/api", rateLimitter); // * rate limiting
 // ! Body parser
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+// ! Query Passer
+app.set("query parser", "extended"); // TODO  to configure how query strings in incoming HTTP requests are parsed
 
 // ! Routes
 
 app.use("/api/v1/tours", tourRouter);
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/reviews", reviewRouter);
 
 // ! handling unhandled routes
 const server = app.use((req, res, next) => {
@@ -71,7 +83,7 @@ process.on("unhandledRejection", (err) => {
 process.on("uncaughtException", (err) => {
   console.log("Uncaught Exception! Shutting down...");
   console.log(err.name, err.message);
-  server.close(() => {
+  /* server.close(() => {
     process.exit(1);
-  });
+  }); */
 });

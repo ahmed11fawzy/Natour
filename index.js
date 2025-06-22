@@ -1,8 +1,11 @@
 const express = require("express");
 const fs = require("fs");
+const crypto = require("crypto");
+const path = require("path");
 const qs = require("qs");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
+const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const dotenv = require("dotenv").config();
 const db = require("./Config/dbConfig");
@@ -11,6 +14,7 @@ const globalErrorHandler = require("./controllers/errorController");
 const userRouter = require("./routes/userRoutes");
 const tourRouter = require("./routes/tourRoutes");
 const reviewRouter = require("./routes/reviewRoutes");
+const viewRouter = require("./routes/viewRoutes");
 // const Tour = require("./Model/tourModel");
 
 // ! get tours data from json and store it in a database .
@@ -33,6 +37,9 @@ db.then(() => {
 
 // ! Middlewares
 
+app.set("view engine", "pug");
+app.set("views", path.join(__dirname, "Views"));
+app.use(express.static(path.join(__dirname, "public")));
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
@@ -46,17 +53,37 @@ const rateLimitter = rateLimit({
 // ! Security meddilewares
 
 app.use(helmet()); // * setting security headers
+
+app.use((req, res, next) => {
+  const nonce = crypto.randomBytes(16).toString("base64");
+  res.setHeader(
+    "Content-Security-Policy",
+    `script-src 'self' https://cdnjs.cloudflare.com https://api.mapbox.com; ` +
+      `style-src 'self' https://api.mapbox.com https://fonts.googleapis.com 'nonce-${nonce}'; ` +
+      `font-src https://fonts.gstatic.com; ` +
+      `connect-src 'self' https://api.mapbox.com; ` +
+      `img-src 'self' https://api.mapbox.com data:; ` +
+      `worker-src blob:`
+  );
+  res.locals.nonce = nonce;
+  next();
+});
 app.use("/api", rateLimitter); // * rate limiting
 // * prevent http parameter pollution
 
 // ! Body parser
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+app.use(cookieParser());
 // ! Query Passer
-app.set("query parser", "extended"); // TODO  to configure how query strings in incoming HTTP requests are parsed
+app.set("query parser", "extended"); //  to configure how query strings in incoming HTTP requests are parsed
 
+app.use((req, res, next) => {
+  console.log(req.cookies);
+  next();
+});
 // ! Routes
-
+app.use("/", viewRouter);
 app.use("/api/v1/tours", tourRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/reviews", reviewRouter);

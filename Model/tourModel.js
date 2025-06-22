@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const slugify = require("slugify");
 // const User = require("./userModel");
 const TourSchema = new mongoose.Schema(
   {
@@ -8,6 +9,7 @@ const TourSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    slug: String,
     price: {
       type: Number,
       required: [true, "Tour price is required"],
@@ -114,6 +116,12 @@ TourSchema.virtual("reviews", {
 });
 
 // Middelwares
+
+// DOCUMENT MIDDLEWARE: runs before .save() and .create()
+TourSchema.pre("save", function (next) {
+  this.slug = slugify(this.name, { lower: true });
+  next();
+});
 
 // ! Middleware for embedding guides pefore saving the document
 /* TourSchema.pre("save", async function (next) {

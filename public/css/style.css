@@ -484,6 +484,7 @@ body {
   height: 2.25rem;
   width: 2.25rem;
   fill: #55c57a;
+      margin-right: 10px;
 }
 .overview-box__label {
   font-weight: 700;

@@ -24,6 +24,6 @@ Router.route("/")
     createReview
   );
 
-Router.route("/:id").get(getReview).patch(updateReview).delete(deleteReview);
+Router.route("/:id").get(protect, getReview).patch(updateReview).delete(deleteReview);
 
 module.exports = Router;
